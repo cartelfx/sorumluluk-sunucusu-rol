@@ -6,36 +6,34 @@ const sorumlulukSunucuID = 'SORUMLULUK_SUNUCU_ID';
 const staffs = [
     { rol: 'YETKİLİ SORUMLUSU' },
     { rol: 'KAYIT SORUMLUSU' },
-    { rol: 'STREAMER SORUMLUSU' },
- /*   { rol: 'SORUMLU' },
-    { rol: 'SORUMLU' },
-    { rol: 'SORUMLU' },
-    { rol: 'SORUMLU' }
-  */
+    { rol: 'STREAMER SORUMLUSU' }
 ];
 
-client.on('guildMemberUpdate', (eskiUye, yeniUye) => {
+client.on('guildMemberUpdate', (oldUser, newUser) => {
     const anaSunucu = client.guilds.cache.get(anaSunucuID);
     const sorumlulukSunucu = client.guilds.cache.get(sorumlulukSunucuID);
 
-    const eskiUyeRoller = eskiUye.roles.cache.map(role => role.name);
-    const yeniUyeRoller = yeniUye.roles.cache.map(role => role.name);
+    const kullaniciRoller = newUser.roles.cache.map(role => role.name);
 
-    const yetkiKontrolü = staffs.some(staff => yeniUyeRoller.includes(staff.rol));
+    const yetkiKontrolü = staffs.some(staff => kullaniciRoller.includes(staff.rol));
 
-    if (!yetkiKontrolü) {
-        return;
-    }
+    if (yetkiKontrolü && kullaniciRoller.some(r => staffs.map(s => s.rol).includes(r))) {
+        const sorumlulukUye = sorumlulukSunucu.members.cache.get(newUser.id);
 
-    staffs.forEach(staff => {
-        const kontrolEdilecekRolAdi = staff.rol;
+        if (sorumlulukUye) {
+            staffs.forEach(staff => {
+                const kontrolEdilecekRolAdi = staff.rol;
+                const anaSunucuRol = anaSunucu.roles.cache.find(role => role.name === kontrolEdilecekRolAdi);
 
-        if (eskiUyeRoller.includes(kontrolEdilecekRolAdi) && !yeniUyeRoller.includes(kontrolEdilecekRolAdi)) {
-            const sorumlulukUye = sorumlulukSunucu.members.cache.get(yeniUye.id);
-            if (sorumlulukUye && kontrolEdilecekRolAdi !== '') {
-                sorumlulukUye.kick()
-                  
-            }
+                if (anaSunucuRol) {
+                    if (!newUser.includes(kontrolEdilecekRolAdi)) {
+                        sorumlulukUye.roles.add(anaSunucuRol);
+                    }
+                } else {
+            //sorumlulukUye.kick(); de yapabilirsiniz keyfinize göre.
+                    sorumlulukUye.ban();
+                }
+            });
         }
-    });
+    }
 });
